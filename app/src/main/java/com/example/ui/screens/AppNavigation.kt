@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Chat
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -28,6 +29,7 @@ fun AppNavigation(viewModel: MainViewModel) {
     val items = listOf(
         Screen.Chat,
         Screen.Tasks,
+        Screen.Terminal,
         Screen.Settings
     )
 
@@ -62,6 +64,7 @@ fun AppNavigation(viewModel: MainViewModel) {
         ) {
             composable(Screen.Chat.route) { ChatScreen(viewModel) }
             composable(Screen.Tasks.route) { TasksScreen(viewModel) }
+            composable(Screen.Terminal.route) { TerminalScreen(viewModel) }
             composable(Screen.Settings.route) { SettingsScreen(viewModel) }
         }
     }
@@ -70,5 +73,6 @@ fun AppNavigation(viewModel: MainViewModel) {
 sealed class Screen(val route: String, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     object Chat : Screen("chat", "Chat", Icons.Filled.Chat)
     object Tasks : Screen("tasks", "Tasks", Icons.Filled.TaskAlt)
+    object Terminal : Screen("terminal", "Terminal", Icons.Filled.Terminal)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
 }

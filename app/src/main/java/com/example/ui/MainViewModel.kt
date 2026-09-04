@@ -7,12 +7,18 @@ import com.example.data.AgentConfig
 import com.example.data.AppRepository
 import com.example.data.ChatMessage
 import com.example.data.Task
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class MainViewModel(private val repository: AppRepository) : ViewModel() {
 
@@ -24,6 +30,9 @@ class MainViewModel(private val repository: AppRepository) : ViewModel() {
 
     val agentConfig: StateFlow<AgentConfig?> = repository.agentConfig
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    private val _terminalLines = MutableStateFlow<List<String>>(emptyList())
+    val terminalLines: StateFlow<List<String>> = _terminalLines.asStateFlow()
 
     init {
         // Initialize config if null
@@ -76,6 +85,32 @@ class MainViewModel(private val repository: AppRepository) : ViewModel() {
         viewModelScope.launch {
             repository.updateConfig(AgentConfig(name = name, modelType = modelType))
         }
+    }
+
+    fun executeTerminalCommand(command: String) {
+        if (command.isBlank()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            _terminalLines.update { it + "> $command" }
+            try {
+                val process = ProcessBuilder("sh", "-c", command)
+                    .redirectErrorStream(true)
+                    .start()
+
+                val reader = BufferedReader(InputStreamReader(process.inputStream))
+                var line: String?
+                while (reader.readLine().also { line = it } != null) {
+                    val outputLine = line ?: ""
+                    _terminalLines.update { it + outputLine }
+                }
+                process.waitFor()
+            } catch (e: Exception) {
+                _terminalLines.update { it + "Error: ${e.message}" }
+            }
+        }
+    }
+
+    fun clearTerminal() {
+        _terminalLines.value = emptyList()
     }
 }
 
